@@ -192,16 +192,20 @@ local function gso()
     return iol[1], io[iol[1]]
 end
 
+local function getHrp()
+    local ch = lp.Character
+    if not ch or not ch.Parent then return nil end
+    local hum = ch:FindFirstChild("Humanoid")
+    if hum and hum.Health <= 0 then return nil end
+    return ch:FindFirstChild("HumanoidRootPart")
+end
+
 local function mv(tp)
     if not tp or typeof(tp) ~= "Vector3" then return end
     local tc = CFrame.new(tp.X, tp.Y, tp.Z)
     while run do
-        local ch = lp.Character
-        local hum = ch and ch:FindFirstChild("Humanoid")
-        local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
-        
-        -- If died or respawning, wait for new character
-        if not ch or not hrp or not hum or hum.Health <= 0 or not hrp.Parent then
+        local hrp = getHrp()
+        if not hrp then
             task.wait(0.5)
             continue
         end
@@ -280,8 +284,7 @@ local function esp()
             Vector3.new(208.82, 17.03, -39.99)
         }
     end
-    local ch = lp.Character
-    local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+    local hrp = getHrp()
     if not hrp then
         for _, pt in ipairs(sp) do
             if not run then return false end
@@ -351,8 +354,7 @@ local function elp()
             Vector3.new(6816.40, 17.56, -40.54), Vector3.new(6805.80, 18.09, -34.34)
         }
     end
-    local ch = lp.Character
-    local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+    local hrp = getHrp()
     if not hrp then
         for _, pt in ipairs(lpth) do
             if not run then return false end
@@ -412,10 +414,8 @@ local function sf()
     fth = task.spawn(function()
         while run do
             local ok, err = pcall(function()
-                local ch = lp.Character
-                local hum = ch and ch:FindFirstChild("Humanoid")
-                local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
-                if not ch or not hrp or not hum or hum.Health <= 0 or not hrp.Parent then
+                local hrp = getHrp()
+                if not hrp then
                     task.wait(1)
                     return
                 end
@@ -500,15 +500,6 @@ local function spf()
     if fth then task.cancel(fth) fth = nil end
     lib:Notify({ Title = "AutoFarm", Content = "disabled!", Duration = 2 })
 end
-
-lp.CharacterAdded:Connect(function(newChar)
-    if run then
-        pcall(function()
-            newChar:WaitForChild("HumanoidRootPart", 10)
-            lib:Notify({ Title = "AutoFarm", Content = "Respawned, resuming farm...", Duration = 2 })
-        end)
-    end
-end)
 
 local iup = false
 ftg = tb:AddToggle({
