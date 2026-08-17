@@ -199,6 +199,8 @@ local function mv(tp)
         local ch = lp.Character
         local hum = ch and ch:FindFirstChild("Humanoid")
         local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+        
+        -- If died or respawning, wait for new character
         if not ch or not hrp or not hum or hum.Health <= 0 or not hrp.Parent then
             task.wait(0.5)
             continue
@@ -631,4 +633,4 @@ local stt_tab = w:AddTab({ Title = "Settings", Icon = "settings" })
 w:BuildInterfaceSection(stt_tab)
 
 local cr = w:AddTab({ Title = "Credits", Icon = "info" })
-cr:AddParagraph({ Title = "Credits", Content = "Script by @xban11\nUI by @d.unne" })
+cr:AddParagraph({ Title = "Credits", Content = "Original script by @xban11\nUI by @d.unne\nRecoded by @makor444" })
