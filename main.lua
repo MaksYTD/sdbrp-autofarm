@@ -194,26 +194,35 @@ end
 
 local function mv(tp)
     if not tp or typeof(tp) ~= "Vector3" then return end
-    local ch = lp.Character or lp.CharacterAdded:Wait()
-    local hrp = ch:WaitForChild("HumanoidRootPart", 5)
-    if not hrp then return end
     local tc = CFrame.new(tp.X, tp.Y, tp.Z)
     while run do
+        local ch = lp.Character
+        local hum = ch and ch:FindFirstChild("Humanoid")
+        local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+        if not ch or not hrp or not hum or hum.Health <= 0 or not hrp.Parent then
+            task.wait(0.5)
+            continue
+        end
+        
         local csp = gs()
         if csp <= 0 then task.wait(0.1) continue end
         local cp = hrp.Position
         local dst = (cp - tp).Magnitude
-        if dst < 1 then hrp.CFrame = tc break end
+        if dst < 1.5 then hrp.CFrame = tc break end
+        
         local dt = task.wait()
         if not run then return end
         dt = tonumber(dt) or 0.016
         csp = gs()
         if csp <= 0 then continue end
+        
         local stp = csp * dt
         if stp >= dst then hrp.CFrame = tc break
         else
             local alp = math.clamp(stp / dst, 0, 1)
-            hrp.CFrame = hrp.CFrame:Lerp(tc, alp)
+            pcall(function()
+                hrp.CFrame = hrp.CFrame:Lerp(tc, alp)
+            end)
         end
     end
 end
@@ -400,70 +409,85 @@ local function sf()
     lib:Notify({ Title = "AutoFarm", Content = "enabled!", Duration = 2 })
     fth = task.spawn(function()
         while run do
-            while run and hb() do
-                lib:Notify({ Title = "AutoFarm", Content = "Briefcase detected -> Laundering...", Duration = 2 })
-                if not elp() then break end
-                local lt = getLaunderTrigger()
-                if lt then
-                    mv(lt.Position)
-                    task.wait(0.5)
-                    lr:FireServer(lt)
+            local ok, err = pcall(function()
+                local ch = lp.Character
+                local hum = ch and ch:FindFirstChild("Humanoid")
+                local hrp = ch and ch:FindFirstChild("HumanoidRootPart")
+                if not ch or not hrp or not hum or hum.Health <= 0 or not hrp.Parent then
+                    task.wait(1)
+                    return
                 end
-                task.wait(1.5)
-                mv(Vector3.new(6816.40, 17.56, -40.54))
-                if not run then break end
-                mv(Vector3.new(6851.19, 17.53, -40.88))
-                if not run then break end
-                mv(Vector3.new(6857.43, 17.34, 23.49))
-                if not run then break end
-            end
-            if not run then break end
-            local tk, td = gso()
-            if not td then td = io[iol[1]] end
-            
-            local selectedCount = ci(td.ItemName)
-            local totalItems = getTotalItems()
-            local maxCap = getMaxCapacity()
-            local sellerName = getSelectedSellerName()
-            
-            if (totalItems > 0 and selectedCount < totalItems) or (totalItems >= maxCap) then
-                lib:Notify({ Title = "AutoFarm", Content = "Selling at " .. sellerName .. "...", Duration = 2 })
-                if not esp() then break end
-                local st = getSellerInstance()
-                if st then
-                    local part = st:FindFirstChild("HumanoidRootPart") or st:FindFirstChildWhichIsA("BasePart")
-                    if part then mv(part.Position) end
-                    task.wait(0.5)
-                    sr:FireServer(st)
-                end
-                task.wait(1.5)
-            elseif totalItems < maxCap and selectedCount < maxCap and gm() >= td.Price then
-                lib:Notify({ Title = "AutoFarm", Content = "Buying " .. td.ItemName .. " ("..selectedCount.."/"..maxCap..")...", Duration = 2 })
-                mv(Vector3.new(6857.43, 17.34, 23.49))
-                if not run then break end
                 
-                local targetPos = getItemTargetPos(td)
-                mv(targetPos)
-                if not run then break end
-                task.wait(0.5)
-                bmi(td.ItemName, td.Price, 0.25)
-                task.wait(0.5)
-                if not run then break end
-                mv(Vector3.new(6857.43, 17.34, 23.49))
-                if not run then break end
-            elseif selectedCount > 0 then
-                lib:Notify({ Title = "AutoFarm", Content = "Selling " .. td.ItemName .. " at " .. sellerName .. "...", Duration = 2 })
-                if not esp() then break end
-                local st = getSellerInstance()
-                if st then
-                    local part = st:FindFirstChild("HumanoidRootPart") or st:FindFirstChildWhichIsA("BasePart")
-                    if part then mv(part.Position) end
-                    task.wait(0.5)
-                    sr:FireServer(st)
+                while run and hb() do
+                    lib:Notify({ Title = "AutoFarm", Content = "Briefcase detected -> Laundering...", Duration = 2 })
+                    if not elp() then break end
+                    local lt = getLaunderTrigger()
+                    if lt then
+                        mv(lt.Position)
+                        task.wait(0.5)
+                        lr:FireServer(lt)
+                    end
+                    task.wait(1.5)
+                    mv(Vector3.new(6816.40, 17.56, -40.54))
+                    if not run then break end
+                    mv(Vector3.new(6851.19, 17.53, -40.88))
+                    if not run then break end
+                    mv(Vector3.new(6857.43, 17.34, 23.49))
+                    if not run then break end
                 end
-                task.wait(1.5)
-            else
-                task.wait(1.5)
+                if not run then return end
+                
+                local tk, td = gso()
+                if not td then td = io[iol[1]] end
+                
+                local selectedCount = ci(td.ItemName)
+                local totalItems = getTotalItems()
+                local maxCap = getMaxCapacity()
+                local sellerName = getSelectedSellerName()
+                
+                if (totalItems > 0 and selectedCount < totalItems) or (totalItems >= maxCap) then
+                    lib:Notify({ Title = "AutoFarm", Content = "Selling at " .. sellerName .. "...", Duration = 2 })
+                    if not esp() then return end
+                    local st = getSellerInstance()
+                    if st then
+                        local part = st:FindFirstChild("HumanoidRootPart") or st:FindFirstChildWhichIsA("BasePart")
+                        if part then mv(part.Position) end
+                        task.wait(0.5)
+                        sr:FireServer(st)
+                    end
+                    task.wait(1.5)
+                elseif totalItems < maxCap and selectedCount < maxCap and gm() >= td.Price then
+                    lib:Notify({ Title = "AutoFarm", Content = "Buying " .. td.ItemName .. " ("..selectedCount.."/"..maxCap..")...", Duration = 2 })
+                    mv(Vector3.new(6857.43, 17.34, 23.49))
+                    if not run then return end
+                    
+                    local targetPos = getItemTargetPos(td)
+                    mv(targetPos)
+                    if not run then return end
+                    task.wait(0.5)
+                    bmi(td.ItemName, td.Price, 0.25)
+                    task.wait(0.5)
+                    if not run then return end
+                    mv(Vector3.new(6857.43, 17.34, 23.49))
+                    if not run then return end
+                elseif selectedCount > 0 then
+                    lib:Notify({ Title = "AutoFarm", Content = "Selling " .. td.ItemName .. " at " .. sellerName .. "...", Duration = 2 })
+                    if not esp() then return end
+                    local st = getSellerInstance()
+                    if st then
+                        local part = st:FindFirstChild("HumanoidRootPart") or st:FindFirstChildWhichIsA("BasePart")
+                        if part then mv(part.Position) end
+                        task.wait(0.5)
+                        sr:FireServer(st)
+                    end
+                    task.wait(1.5)
+                else
+                    task.wait(1.5)
+                end
+            end)
+            
+            if not ok then
+                task.wait(1)
             end
         end
     end)
@@ -474,6 +498,15 @@ local function spf()
     if fth then task.cancel(fth) fth = nil end
     lib:Notify({ Title = "AutoFarm", Content = "disabled!", Duration = 2 })
 end
+
+lp.CharacterAdded:Connect(function(newChar)
+    if run then
+        pcall(function()
+            newChar:WaitForChild("HumanoidRootPart", 10)
+            lib:Notify({ Title = "AutoFarm", Content = "Respawned, resuming farm...", Duration = 2 })
+        end)
+    end
+end)
 
 local iup = false
 ftg = tb:AddToggle({
@@ -598,4 +631,4 @@ local stt_tab = w:AddTab({ Title = "Settings", Icon = "settings" })
 w:BuildInterfaceSection(stt_tab)
 
 local cr = w:AddTab({ Title = "Credits", Icon = "info" })
-cr:AddParagraph({ Title = "Credits", Content = "Original script by @xban11\nUI by @d.unne\nRecoded by @makor444" })
+cr:AddParagraph({ Title = "Credits", Content = "Script by @xban11\nUI by @d.unne" })
